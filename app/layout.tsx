@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/utils/provider";
-
-const geistSans = Geist({
+import { Bricolage_Grotesque } from "next/font/google";
+const geistSans = Bricolage_Grotesque({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = Bricolage_Grotesque({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });

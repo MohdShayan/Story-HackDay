@@ -80,7 +80,7 @@ export default function UploadDesignPage() {
         <main className="gradient-bg min-h-screen py-12 px-6">
             <div className="max-w-3xl mx-auto">
                 <div className="mb-10 text-center">
-                    <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-indigo-600">
+                    <h1 className="text-4xl font-sans font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-indigo-600">
                         Upload & Register Design
                     </h1>
                     <p className="mt-3 text-sm text-gray-700 max-w-lg mx-auto">
@@ -136,7 +136,7 @@ export default function UploadDesignPage() {
                         <button
                             type="submit"
                             disabled={loading || isPending}
-                            className="w-full inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-sky-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition disabled:opacity-50 hover:from-sky-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            className="w-full inline-flex font-sans text-xl items-center justify-center rounded-lg bg-gradient-to-r from-sky-600 to-indigo-600 px-6 py-3 font-medium text-white shadow-sm transition disabled:opacity-50 hover:from-sky-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         >
                             {loading || isPending ? "Processing…" : "Upload & Register"}
                         </button>

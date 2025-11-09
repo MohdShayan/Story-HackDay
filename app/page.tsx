@@ -2,17 +2,26 @@
 import Link from "next/link";
 import ConnectWallet from "@/components/ConnectWallet";
 import { useAccount } from "wagmi";
+import { Bricolage_Grotesque } from "next/font/google";
+const geistSans = Bricolage_Grotesque({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
+const geistMono = Bricolage_Grotesque({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 export default function Home() {
   const { isConnected } = useAccount();
 
   return (
-    <main className="relative min-h-screen overflow-hidden gradient-bg text-black">
+    <main className={`relative min-h-screen overflow-hidden gradient-bg text-black ${geistSans.variable} ${geistMono.variable}`}>
       {/* ── Top Navigation ── */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-black/10 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           {/* <div className="h-6 w-6 rounded bg-gradient-to-br from-sky-400 to-indigo-500" aria-hidden /> */}
-          <span className="text-4xl font-extrabold">FigMint</span>
+          <span className="text-4xl font-sans font-bold">FigMint</span>
         </div>
 
         {/* Wallet UI – now lives only in the nav */}
@@ -21,7 +30,7 @@ export default function Home() {
 
       {/* ── Hero ── */}
       <section className="relative mx-auto max-w-5xl px-6 pt-20 pb-12 text-center">
-        <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+        <h1 className="mx-auto max-w-4xl text-4xl font-sans font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
           Own, remix and monetize your Figma designs
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-gray-700 md:text-lg">
@@ -33,7 +42,7 @@ export default function Home() {
           <Link
             href={isConnected ? "/upload" : "#"}
             className={`
-              group flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white
+              group flex font-sans items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white
               bg-gradient-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
               hover:from-sky-400 hover:to-indigo-400 active:scale-[.99]
               ${!isConnected ? "pointer-events-none opacity-50" : ""}
@@ -41,12 +50,12 @@ export default function Home() {
             onClick={(e) => !isConnected && e.preventDefault()}
           >
             Start Upload
-            <span className="ml-2 h-px w-5 bg-white/60 transition-all group-hover:w-7" aria-hidden />
+            {/* <span className="ml-2 h-px w-5 bg-white/60 transition-all group-hover:w-7" aria-hidden /> */}
           </Link>
 
           <Link
             href="/explore"
-            className="flex items-center justify-center rounded-md border border-black/10 bg-white/70 px-6 py-3 text-sm font-medium text-gray-900 transition hover:bg-white"
+            className="flex items-center font-sans justify-center rounded-md border border-black/10 bg-white/70 px-6 py-3 text-sm font-medium text-gray-900 transition hover:bg-white"
           >
             Explore Designs
           </Link>

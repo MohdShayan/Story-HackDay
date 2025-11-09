@@ -35,13 +35,13 @@ export default function DesignView({ cid }: { cid: string }) {
             } catch { }
 
             // 🔹 Get on-chain IP ID for explorer link
-            try {
-                const r = await fetch(`/api/story/lookup?cid=${cid}`);
-                const j = await r.json();
-                if (j?.ipId) setIpId(j.ipId);
-            } catch (e) {
-                console.warn("Story lookup failed", e);
-            }
+            // try {
+            //     const r = await fetch(`/api/story/lookup?cid=${cid}`);
+            //     const j = await r.json();
+            //     if (j?.ipId) setIpId(j.ipId);
+            // } catch (e) {
+            //     console.warn("Story lookup failed", e);
+            // }
         }
 
         load();
