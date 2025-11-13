@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+#  **FigMint**
+### _Design. Own. Remix. Earn : Powered by Story Protocol._
 
-## Getting Started
+---
 
-First, run the development server:
+##  Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**FigMint** is a decentralized platform that empowers designers to **mint their Figma creations as on-chain IP assets** using the **Story Protocol**.  
+It transforms digital designs into **ownable, traceable, and monetizable IP**, enabling a new era of **collaborative creativity**.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Designers can:
+-  Mint their work as Story IP assets  
+-  License designs for others to remix legally  
+-  Earn automatic royalties via Story SDK  
+-  Track design lineage transparently on-chain  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> _Built for designers. Powered by Story Protocol. Fueled by creativity._
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🧩 Core Features
 
-To learn more about Next.js, take a look at the following resources:
+| Feature                  | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+|  **On-Chain Design Minting** | Instantly tokenize your Figma designs as IP assets.                         |
+|  **Smart Licensing**   | Let others purchase or remix your designs legally through license contracts. |
+|  **Automated Royalties** | Earn royalties whenever your design or its derivatives are used.            |
+|  **Remix Lineage Tracking** | Trace every design version and remix through on-chain metadata.             |
+|  **Story SDK Integration** | Built entirely on Story Protocol for decentralized IP management.           |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Exmaple Workflow 
 
-## Deploy on Vercel
+Designer uploads a Figma file or design URL.
+FigMint mints the design as a Story IP asset on-chain.
+Others browse and license designs for remixing.
+Royalties are automatically distributed to the original designer via Story Protocol.
+Full design lineage remains visible ensuring transparency and credit.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
