@@ -6,7 +6,8 @@ import {
 } from "@story-protocol/core-sdk";
 
 import { privateKeyToAccount } from "viem/accounts";
-import {createPublicClient ,http, keccak256, stringToBytes } from "viem";
+import { http } from "viem";
+import { keccak256, toUtf8Bytes } from "ethers";
 
 const CHAIN_ID = "aeneid" as const;
 const SPG_NFT_CONTRACT = "0xc32A8a0FF3beDDDa58393d022aF433e78739FAbc" as const;
@@ -28,8 +29,8 @@ export async function registerIpOnStory(metadataCid: string) {
 
   const client = StoryClient.newClient(config);
 
-  // Hash CID for Story registry lookups
-  const cidHash = keccak256(stringToBytes(metadataCid));
+  // Hash CID for Story registry lookups (using ethers utils)
+  const cidHash = keccak256(toUtf8Bytes(metadataCid)) as `0x${string}`;
 
   const res = await client.ipAsset.registerIpAsset({
     nft: {
@@ -84,7 +85,7 @@ export async function registerDerivativeOnStory({
 
   const client = StoryClient.newClient(config);
 
-  const remixCidHash = keccak256(stringToBytes(remixCid));
+  const remixCidHash = keccak256(toUtf8Bytes(remixCid)) as `0x${string}`;
 
   // register derivative + SPG mint + PIL flavor commercial remix
   const res = await client.ipAsset.registerDerivativeIpAsset({
@@ -119,19 +120,9 @@ export async function registerDerivativeOnStory({
 }
 
 export async function getIpIdFromCid(cid: string): Promise<string | null> {
-  // 1. Build a *read-only* public client (no private key needed)
-  const publicClient = createPublicClient({
-    chain: {
-      id: 1513, // Aeneid chain id (Story testnet)
-      name: "Story Aeneid",
-      network: "aeneid",
-      nativeCurrency: { name: "IP", symbol: "IP", decimals: 18 },
-      rpcUrls: {
-        default: { http: [process.env.NEXT_PUBLIC_RPC_URL || "https://aeneid.storyrpc.io"] },
-      },
-    },
-    transport: http(),
-  });
+  // 1. Use ethers JSON-RPC provider for a simple read-only call
+  const providerUrl = process.env.NEXT_PUBLIC_RPC_URL || "https://aeneid.storyrpc.io";
+  const provider = new (await import("ethers")).JsonRpcProvider(providerUrl);
 
   // 2. IPAssetRegistry address (hard-coded for Aeneid – see docs)
   const IP_ASSET_REGISTRY = "0x4c2dB1eF1cC5d5b1cB9f2E4B3c2F5e6d7F8a9b0c" as const;
@@ -145,18 +136,14 @@ export async function getIpIdFromCid(cid: string): Promise<string | null> {
       inputs: [{ name: "hash", type: "bytes32" }],
       outputs: [{ name: "", type: "address" }],
     },
-  ] as const;
+  ];
 
-  // 4. Compute the 32-byte hash of the CID
-  const cidHash = keccak256(stringToBytes(cid));
+  // 4. Compute the 32-byte hash of the CID (ethers)
+  const cidHash = keccak256(toUtf8Bytes(cid));
 
-  // 5. Call the registry
-  const ipId = (await publicClient.readContract({
-    address: IP_ASSET_REGISTRY,
-    abi,
-    functionName: "ipId",
-    args: [cidHash],
-  })) as `0x${string}`;
+  // 5. Call the registry using ethers Contract
+  const contract = new (await import("ethers")).Contract(IP_ASSET_REGISTRY, abi, provider);
+  const ipId = (await contract.ipId(cidHash)) as `0x${string}`;
 
   // 6. `0x0000…0000` means “not registered”
   return ipId === "0x0000000000000000000000000000000000000000" ? null : ipId;

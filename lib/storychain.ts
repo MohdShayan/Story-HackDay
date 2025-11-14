@@ -1,6 +1,4 @@
-import { defineChain } from "viem";
-
-export const storyAeneid = defineChain({
+export const storyAeneid = {
   id: 1315,
   name: "Story Aeneid Testnet",
   nativeCurrency: {
@@ -23,4 +21,4 @@ export const storyAeneid = defineChain({
       url: "https://aeneid.storyscan.io",
     },
   },
-});
+};

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 import Link from "next/link";
 import ConnectWallet from "@/components/ConnectWallet";
-import { useAccount } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
 import { Bricolage_Grotesque } from "next/font/google";
 const geistSans = Bricolage_Grotesque({
   variable: "--font-geist-sans",
@@ -13,20 +13,11 @@ const geistMono = Bricolage_Grotesque({
   subsets: ["latin"],
 });
 export default function Home() {
-  const { isConnected } = useAccount();
+  const { authenticated: isConnected } = usePrivy();
 
   return (
-    <main className={`relative min-h-screen overflow-hidden gradient-bg text-black ${geistSans.variable} ${geistMono.variable}`}>
-      {/* ── Top Navigation ── */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-black/10 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          {/* <div className="h-6 w-6 rounded bg-gradient-to-br from-sky-400 to-indigo-500" aria-hidden /> */}
-          <span className="text-4xl font-sans font-bold">FigMint</span>
-        </div>
+    <main className={`relative min-h-screen overflow-hidden gradient-bg text-black ${geistSans.variable} ${geistMono.variable} pt-20`}>
 
-        {/* Wallet UI – now lives only in the nav */}
-        <ConnectWallet />
-      </nav>
 
       {/* ── Hero ── */}
       <section className="relative mx-auto max-w-5xl px-6 pt-20 pb-12 text-center">

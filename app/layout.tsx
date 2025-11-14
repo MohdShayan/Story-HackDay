@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/utils/provider";
+import Providers  from "@/utils/provider";
+import NavBar from "@/components/NavBar";
 import { Bricolage_Grotesque } from "next/font/google";
 const geistSans = Bricolage_Grotesque({
   variable: "--font-geist-sans",
@@ -29,6 +30,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          {/* Global navbar available on all pages (fixed) */}
+          <NavBar />
+          {/* spacer matching navbar height so page content doesn't sit under it */}
+         
           {children}
         </Providers>
       </body>

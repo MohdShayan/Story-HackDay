@@ -1,7 +1,6 @@
 // app/api/designs/list/route.ts
 import { NextResponse } from "next/server";
-import { createPublicClient, http } from "viem";
-import { storyAeneid } from "@/lib/storychain";
+import { ethers } from "ethers";
 import { remixHubAbi } from "@/lib/remixHubAbi";
 
 export async function GET() {
@@ -14,57 +13,47 @@ export async function GET() {
       );
     }
 
-    const client = createPublicClient({
-      chain: storyAeneid,
-      transport: http(process.env.NEXT_PUBLIC_RPC_URL!),
-    });
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+    const iface = new ethers.Interface(remixHubAbi as any);
 
     // -----------------------------------------------------------------
-    // 1. Scan OriginalRegistered events
+    // 1. Scan OriginalRegistered events via JSON-RPC logs
     // -----------------------------------------------------------------
-    const rawLogs = await client.getLogs({
+    // Some versions of ethers.Interface expose `getEventTopic`; if not available
+    // compute the topic from the event signature as a fallback.
+    const topic = typeof (iface as any).getEventTopic === "function"
+      ? (iface as any).getEventTopic("OriginalRegistered")
+      : ethers.id("OriginalRegistered(uint256,address,uint16,bytes32)");
+    const rawLogs = await provider.getLogs({
       address: contract as `0x${string}`,
-      event: {
-        type: "event",
-        name: "OriginalRegistered",
-        inputs: [
-          { name: "ipId", type: "uint256", indexed: true },
-          { name: "owner", type: "address", indexed: true },
-          { name: "presetId", type: "uint16", indexed: false },
-          { name: "cidHash", type: "bytes32", indexed: false },
-        ],
-      },
-      fromBlock: BigInt(0),
+      fromBlock: 0,
+      topics: [topic],
     });
 
     // -----------------------------------------------------------------
     // 2. Serialize BigInt → string
     // -----------------------------------------------------------------
-    const logs = rawLogs.map((log) => ({
-      ...log,
-      blockNumber: log.blockNumber.toString(),
-      logIndex: log.logIndex.toString(),
-      transactionIndex: log.transactionIndex.toString(),
-      // args may contain uint256 → convert to string
-      args: log.args
-        ? {
-            ...log.args,
-            ipId:
-              log.args.ipId !== undefined && log.args.ipId !== null
-                ? log.args.ipId.toString()
-                : null,
-            presetId:
-              log.args.presetId !== undefined && log.args.presetId !== null
-                ? Number(log.args.presetId) // uint16 → number
-                : null,
-          }
-        : { ipId: null, presetId: null },
-    }));
+    // Parse logs with the ABI
+    const parsed = rawLogs.map((l) => {
+      const parsedLog = iface.parseLog({ topics: l.topics, data: l.data } as any);
+      return {
+        blockNumber: String(l.blockNumber),
+        logIndex: String((l as any).logIndex ?? "0"),
+        transactionIndex: String((l as any).transactionIndex ?? "0"),
+        transactionHash: l.transactionHash,
+        args: {
+          ipId: parsedLog.args.ipId !== undefined && parsedLog.args.ipId !== null ? String(parsedLog.args.ipId) : null,
+          owner: parsedLog.args.owner ?? null,
+          presetId: parsedLog.args.presetId !== undefined && parsedLog.args.presetId !== null ? Number(parsedLog.args.presetId) : null,
+          cidHash: parsedLog.args.cidHash ?? null,
+        },
+      };
+    });
 
     // -----------------------------------------------------------------
     // 3. Return safe JSON
     // -----------------------------------------------------------------
-    return NextResponse.json(logs, { status: 200 });
+    return NextResponse.json(parsed, { status: 200 });
   } catch (err: any) {
     console.error("[/api/designs/list] error:", err);
     return NextResponse.json(

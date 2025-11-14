@@ -1,9 +1,8 @@
-// app/upload/page.tsx
 "use client";
 
 import React, { useState } from "react";
 import { useRemixHub } from "@/hooks/useRemixHub";
-import { keccak256, stringToBytes } from "viem"; // stringToBytes is the correct viem function
+import { keccak256, toUtf8Bytes } from "ethers";
 
 export default function UploadDesignPage() {
     const [figmaUrl, setFigmaUrl] = useState("");
@@ -54,7 +53,7 @@ export default function UploadDesignPage() {
             if (!ipId) throw new Error("Missing ipId from Story");
 
             // --- 3. Compute cidHash locally (RemixHub format) ---
-            const cidHash = keccak256(stringToBytes(cid)) as `0x${string}`;
+            const cidHash = keccak256(toUtf8Bytes(cid)) as `0x${string}`;
             console.log("CID Hash:", cidHash);
 
             // Persist CID → Hash mapping
@@ -77,7 +76,7 @@ export default function UploadDesignPage() {
     }
 
     return (
-        <main className="gradient-bg min-h-screen py-12 px-6">
+        <main className="gradient-bg min-h-screen py-12 px-6 pt-30">
             <div className="max-w-3xl mx-auto">
                 <div className="mb-10 text-center">
                     <h1 className="text-4xl font-sans font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-indigo-600">

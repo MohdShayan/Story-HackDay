@@ -1,4 +1,3 @@
-// app/explore/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -64,7 +63,7 @@ export default function ExplorePage() {
     }, []);
 
     return (
-        <main className="gradient-bg min-h-screen flex items-center justify-center py-12 px-6">
+        <main className="gradient-bg min-h-screen flex items-center justify-center py-12 px-6 pt-20">
             <div className="w-full max-w-6xl">
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="text-center">

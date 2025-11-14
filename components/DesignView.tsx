@@ -98,156 +98,165 @@ export default function DesignView({ cid }: { cid: string }) {
     const figUrl = figFile ? `https://ipfs.io/ipfs/${figFile}` : null;
 
     return (
-        <div className="gradient-bg min-h-screen max-w-4xl mx-auto p-8">
+        <main className="relative min-h-screen overflow-hidden gradient-bg text-black">
+            <div className="mx-auto max-w-5xl px-6 pt-20 pb-12">
+                <div className="relative hero-glow mb-6" />
 
-            {/* Card */}
-            <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-100">
+                {/* Card */}
+                <div className="rounded-2xl border border-black/10 bg-white/70 shadow-lg overflow-hidden">
 
-                {/* Header */}
-                <div className="px-6 py-6 bg-gradient-to-r from-sky-600 to-indigo-600 text-white flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-lg bg-white/20 flex items-center justify-center text-lg font-bold">
-                            {(title[0] || "D").toUpperCase()}
-                        </div>
-
-                        <div>
-                            <h1 className="text-xl font-semibold leading-tight">{title}</h1>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-
-                        {/* Remix button */}
-                        <button
-                            onClick={() => window.location.href = `/remix/${cid}`}
-                            className="bg-indigo-800 px-4 py-2 text-sm rounded-lg hover:opacity-90"
-                        >
-                            Remix
-                        </button>
-
-                        {/* Remix count */}
-                        <span className="bg-white/20 border border-white/30 px-3 py-1 rounded-md text-xs">
-                            Remixes: {remixCount}
-                        </span>
-
-                        {/* Story Explorer */}
-                        {ipId && (
-                            <a
-                                href={`https://aeneid.storyscan.io/ip/${ipId}`}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                className="bg-white/10 border border-white/20 px-4 py-2 text-sm rounded-lg hover:bg-white/5"
+                    {/* Header */}
+                    <div className="px-6 py-6 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div
+                                className="w-16 h-16 rounded-lg flex items-center justify-center text-lg font-bold text-white"
+                                style={{
+                                    background: "linear-gradient(135deg,#6366F1 0%,#EC4899 100%)",
+                                    boxShadow: "0 6px 20px rgba(99,102,241,0.12)",
+                                }}
                             >
-                                Story Explorer →
-                            </a>
-                        )}
+                                {(title[0] || "D").toUpperCase()}
+                            </div>
 
-                        {/* Download */}
-                        {figUrl && (
-                            <a
-                                href={figUrl}
-                                download
-                                className="bg-white/10 border border-white/20 px-4 py-2 text-sm rounded-lg hover:bg-white/5"
-                            >
-                                Download .fig
-                            </a>
-                        )}
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Preview */}
-                    <div className="md:col-span-2">
-                        <div
-                            className="rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm relative cursor-pointer"
-                            onClick={() => previewSrc && setPreviewOpen(true)}
-                        >
-                            <Image
-                                src={imgg}
-                                alt={title}
-                                className="w-full object-cover"
-                                loading="lazy"
-                            />
-
-                            <div className="absolute top-3 right-3 bg-white/60 backdrop-blur rounded-md px-3 py-1 text-xs text-gray-800">
-                                Preview
+                            <div>
+                                <h1 className="text-2xl font-semibold leading-tight text-gray-900">{title}</h1>
+                                {description && <p className="text-sm text-gray-700 mt-1">{description}</p>}
                             </div>
                         </div>
 
-                        {/* Derived from */}
-                        {metadata.remixOf && (
-                            <div className="mt-3 text-sm">
-                                <span className="text-gray-500">Derived from: </span>
-                                <a
-                                    className="text-indigo-600 underline break-all"
-                                    href={`/design/${metadata.remixOf}`}
-                                >
-                                    {metadata.remixOf}
-                                </a>
-                            </div>
-                        )}
-
-                        {description && <p className="mt-4 text-gray-700 leading-relaxed">{description}</p>}
-                    </div>
-
-                    {/* Sidebar */}
-                    <aside className="space-y-4">
-
-                        {/* CID */}
-                        <div className="bg-gray-50 border border-gray-100 p-4 rounded-lg">
-                            <p className="text-xs text-gray-500">CID</p>
-                            <p className="text-xs break-all font-mono text-gray-800 mt-1">{cid}</p>
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={copyCid}
-                                className="mt-2 text-sm bg-sky-600 text-white px-3 py-1 rounded hover:opacity-95"
+                                onClick={() => window.location.href = `/remix/${cid}`}
+                                className={`group flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white
+                                  bg-gradient-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
+                                  hover:from-sky-400 hover:to-indigo-400 active:scale-[.99]`}
                             >
-                                {copied ? "Copied" : "Copy"}
+                                Remix
                             </button>
-                        </div>
 
-                        {/* Figma link */}
-                        <div className="p-4 rounded-lg border border-gray-100 bg-gray-50 text-center">
-                            {metadata.figmaUrl ? (
+                            <span className="px-3 py-1 rounded-md text-xs bg-white/70 border border-black/10 text-gray-900">Remixes: {remixCount}</span>
+
+                            {ipId && (
                                 <a
-                                    href={metadata.figmaUrl}
+                                    href={`https://aeneid.storyscan.io/ip/${ipId}`}
                                     target="_blank"
-                                    className="text-sm bg-sky-600 text-white px-4 py-2 rounded-lg inline-block"
+                                    rel="noreferrer noopener"
+                                    className="px-4 py-2 text-sm rounded-lg border border-black/10 bg-white/70 text-gray-900"
                                 >
-                                    Open in Figma
+                                    Story Explorer →
                                 </a>
-                            ) : (
-                                <span className="text-xs text-gray-500">No Figma URL provided</span>
+                            )}
+
+                            {figUrl && (
+                                <a
+                                    href={figUrl}
+                                    download
+                                    className="px-4 py-2 text-sm rounded-lg border border-black/10 bg-white/70 text-gray-900"
+                                >
+                                    Download .fig
+                                </a>
                             )}
                         </div>
-                    </aside>
-                </div>
-            </div>
+                    </div>
 
-            {/* Preview modal */}
-            {previewOpen && previewSrc && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
-                    onClick={() => setPreviewOpen(false)}
-                >
-                    <div
-                        className="max-w-5xl w-full rounded-xl overflow-hidden bg-white"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="text-sm font-medium">{title}</h3>
-                            <button
-                                onClick={() => setPreviewOpen(false)}
-                                className="text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-100"
+                    {/* Content */}
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        {/* Preview */}
+                        <div className="md:col-span-2">
+                            <div
+                                className="rounded-xl overflow-hidden bg-white p-0 border border-black/10 shadow-sm relative cursor-pointer"
+                                onClick={() => previewSrc && setPreviewOpen(true)}
                             >
-                                Close
-                            </button>
+                                {previewSrc ? (
+                                    <img src={previewSrc} alt={title} className="w-full object-cover max-h-[520px]" />
+                                ) : (
+                                    <Image
+                                        src={imgg}
+                                        alt={title}
+                                        className="w-full object-cover"
+                                        loading="lazy"
+                                    />
+                                )}
+
+                                <div className="absolute top-3 right-3 bg-white/60 backdrop-blur rounded-md px-3 py-1 text-xs text-gray-800">
+                                    Preview
+                                </div>
+                            </div>
+
+                            {/* Derived from */}
+                            {metadata.remixOf && (
+                                <div className="mt-3 text-sm">
+                                    <span className="text-gray-500">Derived from: </span>
+                                    <a
+                                        className="text-indigo-600 underline break-all"
+                                        href={`/design/${metadata.remixOf}`}
+                                    >
+                                        {metadata.remixOf}
+                                    </a>
+                                </div>
+                            )}
+
+                            {description && <p className="mt-4 text-gray-700 leading-relaxed">{description}</p>}
                         </div>
-                        <img src={previewSrc} alt={title} className="w-full object-contain max-h-[80vh]" />
+
+                        {/* Sidebar */}
+                        <aside className="space-y-4">
+
+                            {/* CID */}
+                            <div className="bg-white/70 border border-black/10 p-4 rounded-lg">
+                                <p className="text-xs text-gray-500">CID</p>
+                                <p className="text-xs break-all font-mono text-gray-800 mt-1">{cid}</p>
+                                <button
+                                    onClick={copyCid}
+                                    className="mt-2 text-sm bg-sky-600 text-white px-3 py-1 rounded hover:opacity-95"
+                                >
+                                    {copied ? "Copied" : "Copy"}
+                                </button>
+                            </div>
+
+                            {/* Figma link */}
+                            <div className="p-4 rounded-lg border border-black/10 bg-white/70 text-center">
+                                {metadata.figmaUrl ? (
+                                    <a
+                                        href={metadata.figmaUrl}
+                                        target="_blank"
+                                        className="text-sm bg-sky-600 text-white px-4 py-2 rounded-lg inline-block"
+                                    >
+                                        Open in Figma
+                                    </a>
+                                ) : (
+                                    <span className="text-xs text-gray-500">No Figma URL provided</span>
+                                )}
+                            </div>
+                        </aside>
                     </div>
                 </div>
-            )}
-        </div>
+
+                {/* Preview modal */}
+                {previewOpen && previewSrc && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+                        onClick={() => setPreviewOpen(false)}
+                    >
+                        <div
+                            className="max-w-5xl w-full rounded-xl overflow-hidden bg-white"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center p-4 border-b">
+                                <h3 className="text-sm font-medium">{title}</h3>
+                                <button
+                                    onClick={() => setPreviewOpen(false)}
+                                    className="text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-100"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                            <img src={previewSrc} alt={title} className="w-full object-contain max-h-[80vh]" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </main>
     );
 }
