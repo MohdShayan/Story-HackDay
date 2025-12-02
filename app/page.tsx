@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import ConnectWallet from "@/components/ConnectWallet";
+import ContractsOverview from "@/components/ContractsOverview";
+import ProcessFlow from "@/components/ProcessFlow";
 import { usePrivy } from "@privy-io/react-auth";
 import { Bricolage_Grotesque } from "next/font/google";
 const geistSans = Bricolage_Grotesque({
@@ -34,7 +36,7 @@ export default function Home() {
             href={isConnected ? "/upload" : "#"}
             className={`
               group flex font-sans items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white
-              bg-gradient-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
+              bg-linear-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
               hover:from-sky-400 hover:to-indigo-400 active:scale-[.99]
               ${!isConnected ? "pointer-events-none opacity-50" : ""}
             `}
@@ -81,37 +83,10 @@ export default function Home() {
           ))}
         </div>
 
-        {/* ── How it works ── */}
-        <div className="mt-16 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
-          <div>
-            <h3 className="mb-4 text-base font-semibold text-gray-900">How it works</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              {[
-                "Upload a public Figma file or the .fig export",
-                "Metadata is stored on IPFS",
-                "Registered as an IP asset on Story Protocol",
-                "Anchored in the RemixHub contract for discovery",
-                "Enable remix workflows and optional commercial licensing",
-              ].map((step) => (
-                <li
-                  key={step}
-                  className="rounded-lg bg-white/70 p-3 backdrop-blur-sm transition hover:bg-white border border-black/10"
-                >
-                  {step}
-                </li>
-              ))}
-            </ul>
-          </div>
 
-          <div className="rounded-xl border border-black/10 bg-white/70 p-6">
-            <h4 className="mb-2 text-sm font-semibold text-gray-900">Designed for teams</h4>
-            <p className="text-sm text-gray-700">
-              Ship design systems collaboratively, keep provenance intact, and capture downstream value with transparent splits.
-            </p>
-            <div className="mt-4 text-xs text-gray-600">Story Aeneid Testnet</div>
-          </div>
-        </div>
       </section>
+      <ContractsOverview />
+      <ProcessFlow />
     </main>
   );
 }

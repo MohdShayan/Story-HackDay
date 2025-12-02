@@ -11,6 +11,7 @@ export default function DesignView({ cid }: { cid: string }) {
 
     const [ipId, setIpId] = useState<string | null>(null);
     const [remixCount, setRemixCount] = useState<number>(0);
+    const [derivatives, setDerivatives] = useState<Array<{ cid: string; title: string; ipId?: string | null }>>([]);
 
     useEffect(() => {
         if (!cid) return;
@@ -35,13 +36,44 @@ export default function DesignView({ cid }: { cid: string }) {
             } catch { }
 
             // 🔹 Get on-chain IP ID for explorer link
-            // try {
-            //     const r = await fetch(`/api/story/lookup?cid=${cid}`);
-            //     const j = await r.json();
-            //     if (j?.ipId) setIpId(j.ipId);
-            // } catch (e) {
-            //     console.warn("Story lookup failed", e);
-            // }
+            try {
+                const r = await fetch(`/api/story/lookup?cid=${cid}`);
+                const j = await r.json();
+                if (j?.ipId) setIpId(j.ipId);
+            } catch (e) {
+                console.warn("Story lookup failed", e);
+            }
+            // 🔹 Derivatives via chain-first API (child IPs of this parent)
+            try {
+                const res = await fetch(`/api/story/derivatives?parentCid=${cid}`);
+                if (res.ok) {
+                    const entries: any[] = await res.json();
+                    const items: Array<{ cid: string; title: string; ipId?: string | null }> = [];
+                    for (const entry of entries) {
+                        const childIpId = entry?.args?.childIpId || null;
+                        const childCidHash = entry?.args?.childCidHash || null;
+                        let childCid: string | null = null;
+                        if (childCidHash && typeof localStorage !== "undefined") {
+                            childCid = localStorage.getItem(childCidHash);
+                        }
+                        if (childCid) {
+                            try {
+                                const mRes = await fetch(`/api/ipfs/get?cid=${childCid}`);
+                                if (mRes.ok) {
+                                    const m = await mRes.json();
+                                    items.push({ cid: childCid, title: m?.title ?? "Untitled", ipId: childIpId });
+                                }
+                            } catch { items.push({ cid: childCid, title: "Untitled", ipId: childIpId }); }
+                        } else {
+                            // No CID yet; still present entry with StoryScan link only
+                            items.push({ cid: childCid || `childIpId:${childIpId}`, title: "Derivative", ipId: childIpId });
+                        }
+                    }
+                    setDerivatives(items);
+                }
+            } catch (e) {
+                console.warn("Derivatives fetch failed", e);
+            }
         }
 
         load();
@@ -62,7 +94,7 @@ export default function DesignView({ cid }: { cid: string }) {
             <div className="max-w-4xl mx-auto p-8">
                 <div className="animate-pulse space-y-4">
                     <div className="h-8 bg-gray-200 rounded w-1/3" />
-                    <div className="h-64 bg-gradient-to-r from-gray-100 to-gray-200 rounded" />
+                    <div className="h-64 bg-linear-to-r from-gray-100 to-gray-200 rounded" />
                     <div className="h-4 bg-gray-200 rounded w-2/3" />
                     <div className="h-10 bg-gray-200 rounded w-1/2 mt-2" />
                 </div>
@@ -119,7 +151,20 @@ export default function DesignView({ cid }: { cid: string }) {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-semibold leading-tight text-gray-900">{title}</h1>
+                                <h1 className="text-2xl font-semibold leading-tight text-gray-900 flex items-center gap-3">
+                                    <span>{title}</span>
+                                    {ipId && (
+                                        <a
+                                            href={`https://aeneid.storyscan.io/ip-id/${ipId}`}
+                                            target="_blank"
+                                            rel="noreferrer noopener"
+                                            className="text-xs font-normal text-indigo-600 underline break-all"
+                                            title={ipId}
+                                        >
+                                            IP: {`${ipId.slice(0, 10)}…${ipId.slice(-4)}`}
+                                        </a>
+                                    )}
+                                </h1>
                                 {description && <p className="text-sm text-gray-700 mt-1">{description}</p>}
                             </div>
                         </div>
@@ -128,8 +173,8 @@ export default function DesignView({ cid }: { cid: string }) {
                             <button
                                 onClick={() => window.location.href = `/remix/${cid}`}
                                 className={`group flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white
-                                  bg-gradient-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
-                                  hover:from-sky-400 hover:to-indigo-400 active:scale-[.99]`}
+                                                                    bg-linear-to-r from-sky-500 to-indigo-500 shadow-lg shadow-indigo-900/20 transition
+                                                                    hover:from-sky-400 hover:to-indigo-400 active:scale-[.99]`}
                             >
                                 Remix
                             </button>
@@ -138,7 +183,7 @@ export default function DesignView({ cid }: { cid: string }) {
 
                             {ipId && (
                                 <a
-                                    href={`https://aeneid.storyscan.io/ip/${ipId}`}
+                                    href={`https://aeneid.storyscan.io/ip-id/${ipId}`}
                                     target="_blank"
                                     rel="noreferrer noopener"
                                     className="px-4 py-2 text-sm rounded-lg border border-black/10 bg-white/70 text-gray-900"
@@ -196,6 +241,48 @@ export default function DesignView({ cid }: { cid: string }) {
                                     </a>
                                 </div>
                             )}
+                            {/* Derivatives section */}
+                            <div className="mt-8">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-2">Derivatives</h3>
+                                {derivatives.length === 0 ? (
+                                    <p className="text-sm text-gray-600">No derivatives published yet.</p>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {derivatives.map((d) => (
+                                            <li key={d.cid} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white/70 px-3 py-2">
+                                                <div className="min-w-0">
+                                                    <a href={`/design/${d.cid}`} className="text-sm font-medium text-gray-900 truncate underline">
+                                                        {d.title}
+                                                    </a>
+                                                    <div className="text-xs text-gray-600 break-all">CID: {d.cid}</div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    {d.ipId && (
+                                                        <a
+                                                            href={`https://aeneid.storyscan.io/ip-id/${d.ipId}`}
+                                                            target="_blank"
+                                                            rel="noreferrer noopener"
+                                                            className="text-xs text-indigo-600 underline"
+                                                            title="Open on StoryScan"
+                                                        >
+                                                            StoryScan
+                                                        </a>
+                                                    )}
+                                                    <a
+                                                        href={`https://ipfs.io/ipfs/${d.cid}`}
+                                                        target="_blank"
+                                                        rel="noreferrer noopener"
+                                                        className="text-xs text-gray-700 underline"
+                                                        title="Open metadata on IPFS"
+                                                    >
+                                                        IPFS
+                                                    </a>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
 
                             {description && <p className="mt-4 text-gray-700 leading-relaxed">{description}</p>}
                         </div>

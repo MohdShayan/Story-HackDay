@@ -16,7 +16,7 @@ export async function registerIpOnStory(metadataCid: string) {
   const pk = process.env.PRIVATE_KEY?.trim();
   if (!pk) throw new Error("Missing PRIVATE_KEY in .env.local");
 
-   const account = privateKeyToAccount(`0x${pk.replace(/^0x/, "")}`);
+  const account = privateKeyToAccount(`0x${pk.replace(/^0x/, "")}`);
 
   const rpcUrl =
     process.env.NEXT_PUBLIC_RPC_URL || "https://aeneid.storyrpc.io";
@@ -32,34 +32,40 @@ export async function registerIpOnStory(metadataCid: string) {
   // Hash CID for Story registry lookups (using ethers utils)
   const cidHash = keccak256(toUtf8Bytes(metadataCid)) as `0x${string}`;
 
-  const res = await client.ipAsset.registerIpAsset({
-    nft: {
-      type: "mint",
-      spgNftContract: SPG_NFT_CONTRACT,
-      recipient: account.address,
-      allowDuplicates: true,
-    },
-    licenseTermsData: [
-      {
-        terms: PILFlavor.commercialRemix({
-          commercialRevShare: 10, // 10% rev share for parent creator
-          defaultMintingFee: BigInt(0),
-          currency: WIP_TOKEN_ADDRESS,
-        }),
+  try {
+    const sdkRes = await client.ipAsset.registerIpAsset({
+      nft: {
+        type: "mint",
+        spgNftContract: SPG_NFT_CONTRACT,
+        recipient: account.address,
+        allowDuplicates: true,
       },
-    ],
-    ipMetadata: {
-      ipMetadataURI: `ipfs://${metadataCid}`,
-      ipMetadataHash: cidHash,
-      nftMetadataURI: `ipfs://${metadataCid}`,
-      nftMetadataHash: cidHash,
-    },
-  });
-
-  return {
-    ipId: res.ipId,
-    txHash: res.txHash,
-  };
+      licenseTermsData: [
+        {
+          terms: PILFlavor.commercialRemix({
+            commercialRevShare: 10,
+            defaultMintingFee: BigInt(0),
+            currency: WIP_TOKEN_ADDRESS,
+          }),
+        },
+      ],
+      ipMetadata: {
+        ipMetadataURI: `ipfs://${metadataCid}`,
+        ipMetadataHash: cidHash,
+        nftMetadataURI: `ipfs://${metadataCid}`,
+        nftMetadataHash: cidHash,
+      },
+    });
+    const ipId = sdkRes.ipId;
+    const txHash = sdkRes.txHash as `0x${string}` | undefined;
+    if (!ipId || !txHash) {
+      throw new Error("SDK did not return ipId/txHash");
+    }
+    return { ipId, txHash };
+  } catch (e: any) {
+    const hint = "Ensure @story-protocol/core-sdk@1.4.1 supports ipAsset.registerIpAsset and SPG_NFT_CONTRACT is valid on Aeneid.";
+    throw new Error(`Story original registration failed: ${e?.message || e}. ${hint}`);
+  }
 }
 
 export async function registerDerivativeOnStory({
@@ -72,7 +78,7 @@ export async function registerDerivativeOnStory({
   const pk = process.env.PRIVATE_KEY?.trim();
   if (!pk) throw new Error("Missing PRIVATE_KEY in .env.local");
 
-   const account = privateKeyToAccount(`0x${pk.replace(/^0x/, "")}`);
+  const account = privateKeyToAccount(`0x${pk.replace(/^0x/, "")}`);
 
   const rpcUrl =
     process.env.NEXT_PUBLIC_RPC_URL || "https://aeneid.storyrpc.io";
@@ -88,35 +94,41 @@ export async function registerDerivativeOnStory({
   const remixCidHash = keccak256(toUtf8Bytes(remixCid)) as `0x${string}`;
 
   // register derivative + SPG mint + PIL flavor commercial remix
-  const res = await client.ipAsset.registerDerivativeIpAsset({
-    parentIpId,
-    nft: {
-      type: "mint",
-      spgNftContract: SPG_NFT_CONTRACT,
-      recipient: account.address,
-      allowDuplicates: true,
-    },
-    licenseTermsData: [
-      {
-        terms: PILFlavor.commercialRemix({
-          commercialRevShare: 10, // match parent IP royalty
-          defaultMintingFee: BigInt(0),
-          currency: WIP_TOKEN_ADDRESS,
-        }),
+  try {
+    const sdkRes = await client.ipAsset.registerDerivativeIpAsset({
+      parentIpId,
+      nft: {
+        type: "mint",
+        spgNftContract: SPG_NFT_CONTRACT,
+        recipient: account.address,
+        allowDuplicates: true,
       },
-    ],
-    ipMetadata: {
-      ipMetadataURI: `ipfs://${remixCid}`,
-      ipMetadataHash: remixCidHash,
-      nftMetadataURI: `ipfs://${remixCid}`,
-      nftMetadataHash: remixCidHash,
-    },
-  });
-
-  return {
-    newIpId: res.ipId,
-    txHash: res.txHash,
-  };
+      licenseTermsData: [
+        {
+          terms: PILFlavor.commercialRemix({
+            commercialRevShare: 10,
+            defaultMintingFee: BigInt(0),
+            currency: WIP_TOKEN_ADDRESS,
+          }),
+        },
+      ],
+      ipMetadata: {
+        ipMetadataURI: `ipfs://${remixCid}`,
+        ipMetadataHash: remixCidHash,
+        nftMetadataURI: `ipfs://${remixCid}`,
+        nftMetadataHash: remixCidHash,
+      },
+    });
+    const newIpId = sdkRes.ipId;
+    const txHash = sdkRes.txHash as `0x${string}` | undefined;
+    if (!newIpId || !txHash) {
+      throw new Error("SDK did not return newIpId/txHash");
+    }
+    return { newIpId, txHash };
+  } catch (e: any) {
+    const hint = "Ensure parentIpId exists and SDK method registerDerivativeIpAsset matches installed version.";
+    throw new Error(`Story derivative registration failed: ${e?.message || e}. ${hint}`);
+  }
 }
 
 export async function getIpIdFromCid(cid: string): Promise<string | null> {
@@ -143,7 +155,13 @@ export async function getIpIdFromCid(cid: string): Promise<string | null> {
 
   // 5. Call the registry using ethers Contract
   const contract = new (await import("ethers")).Contract(IP_ASSET_REGISTRY, abi, provider);
-  const ipId = (await contract.ipId(cidHash)) as `0x${string}`;
+  let ipId: `0x${string}`;
+  try {
+    ipId = (await contract.ipId(cidHash)) as `0x${string}`;
+  } catch (e) {
+    console.warn("IP registry lookup failed via ethers; returning null", e);
+    return null;
+  }
 
   // 6. `0x0000…0000` means “not registered”
   return ipId === "0x0000000000000000000000000000000000000000" ? null : ipId;

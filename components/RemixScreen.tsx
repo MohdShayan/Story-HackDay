@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { keccak256, toUtf8Bytes } from "ethers";
 
 export default function RemixScreen({ cid }: { cid: string }) {
     const router = useRouter();
@@ -13,6 +14,7 @@ export default function RemixScreen({ cid }: { cid: string }) {
 
     async function remixDesign(e: any) {
         e.preventDefault();
+        console.log("[REMIX] Submit clicked", { originalCid: cid });
 
         if (!title.trim() || (!file && !figmaUrl.trim())) {
             setMessage("Title and either a Figma URL or .fig file are required.");
@@ -21,6 +23,7 @@ export default function RemixScreen({ cid }: { cid: string }) {
 
         setLoading(true);
         setMessage("Uploading remix metadata to IPFS…");
+        console.log("[REMIX] Stage 1: Preparing form data for IPFS");
 
         try {
             // ✅ Upload remix metadata to IPFS
@@ -30,16 +33,29 @@ export default function RemixScreen({ cid }: { cid: string }) {
             if (file) formData.append("file", file);
             if (figmaUrl.trim()) formData.append("figmaUrl", figmaUrl.trim());
 
+            console.log("[REMIX] Stage 1: Sending IPFS upload request");
             const uploadRes = await fetch("/api/ipfs/upload", { method: "POST", body: formData });
             const uploadJson = await uploadRes.json();
 
             if (!uploadRes.ok || !uploadJson.cid) {
+                console.error("[REMIX] Stage 1 ERROR: IPFS upload failed", uploadJson);
                 throw new Error(uploadJson.error || "IPFS upload failed");
             }
 
-            const remixCid = uploadJson.cid;
+            const remixCid = uploadJson.cid as string;
+            console.log("[REMIX] Stage 1 SUCCESS: Remix CID from IPFS", { remixCid });
+
+            // Persist CID → Hash mapping for client-side resolution
+            try {
+                const cidHash = keccak256(toUtf8Bytes(remixCid));
+                localStorage.setItem(cidHash, remixCid);
+                console.log("[REMIX] Stage 3: Persisted remix cidHash→cid mapping", { cidHash });
+            } catch {
+                console.warn("[REMIX] Stage 3: Failed to persist cidHash mapping");
+            }
 
             setMessage("Registering remix on Story Protocol…");
+            console.log("[REMIX] Stage 2: Registering derivative on Story", { originalCid: cid, remixCid });
 
             // ✅ Register remix on chain
             const remixRes = await fetch("/api/story/remix", {
@@ -50,21 +66,28 @@ export default function RemixScreen({ cid }: { cid: string }) {
 
             const remixJson = await remixRes.json();
             if (!remixJson.success) {
+                console.error("[REMIX] Stage 2 ERROR: Remix API failed", remixJson);
                 throw new Error(remixJson.error || "Remix transaction failed");
             }
+            console.log("[REMIX] Stage 2 SUCCESS: Derivative registered", { parentIpId: remixJson.parentIpId, newIpId: remixJson.newIpId, txHash: remixJson.txHash });
 
             // ✅ Optimistic remix UI counter
             try {
                 const key = `remix-count:${cid}`;
                 const current = Number(localStorage.getItem(key) || "0");
                 localStorage.setItem(key, String(current + 1));
-            } catch { }
+                console.log("[REMIX] Stage 3: Incremented local remix counter", { key, newCount: current + 1 });
+            } catch {
+                console.warn("[REMIX] Stage 3: Failed to update local remix counter");
+            }
 
-            const explorerUrl = `https://aeneid.storyscan.io/ip/${remixJson.newIpId}`;
+            const explorerUrl = `https://aeneid.storyscan.io/ip-id/${remixJson.newIpId}`;
+            const txUrl = remixJson.txHash ? `https://aeneid.storyscan.io/tx/${remixJson.txHash}` : null;
 
             setMessage(
                 `Remix minted on chain.\n\n` +
                 `StoryScan: ${explorerUrl}\n` +
+                (txUrl ? `Tx: ${txUrl}\n` : "") +
                 `Parent CID: ${cid}\n` +
                 `Remix CID: ${remixCid}\n\n` +
                 `Redirecting…`
@@ -76,18 +99,19 @@ export default function RemixScreen({ cid }: { cid: string }) {
             }, 1800);
 
         } catch (err: any) {
-            console.error(err);
+            console.error("[REMIX] FATAL ERROR: Flow failed", err);
             setMessage(`${err.message || "Something went wrong"}`);
         } finally {
+            console.log("[REMIX] Flow finished (success or error)");
             setLoading(false);
         }
     }
 
     return (
-        <main className="gradient-bg min-h-screen py-12 px-6">
+        <main className="gradient-bg min-h-screen py-32 px-6">
             <div className="max-w-xl mx-auto space-y-6">
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-indigo-600">Remix Design</h2>
+                    <h2 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-sky-600 to-indigo-600">Remix Design</h2>
                     <p className="text-sm text-gray-700">Original CID: <span className="font-mono text-gray-800">{cid}</span></p>
                 </div>
                 <form onSubmit={remixDesign} className="space-y-6 bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-white/40">
@@ -98,7 +122,6 @@ export default function RemixScreen({ cid }: { cid: string }) {
                             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
                             placeholder="e.g. Dark Theme Variant"
                             onChange={(e) => setTitle(e.target.value)}
-                            required
                         />
                     </div>
                     <div className="space-y-2">
@@ -124,7 +147,7 @@ export default function RemixScreen({ cid }: { cid: string }) {
                     <div>
                         <button
                             disabled={loading}
-                            className="w-full inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-sky-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition disabled:opacity-50 hover:from-sky-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            className="w-full inline-flex items-center justify-center rounded-lg bg-linear-to-r from-sky-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition disabled:opacity-50 hover:from-sky-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         >
                             {loading ? "Processing…" : "Remix & Publish"}
                         </button>

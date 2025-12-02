@@ -33,15 +33,32 @@ export async function GET() {
     // 2. Serialize BigInt → string
     // -----------------------------------------------------------------
     // Parse logs with the ABI
+    function toHexIpId(v: any): `0x${string}` | null {
+      try {
+        // Support BigInt, number, decimal string
+        const b = typeof v === "bigint" ? v : BigInt(String(v));
+        if (b < BigInt(0)) return null;
+        const hex = b.toString(16);
+        if (hex.length > 40) return null; // must fit 20 bytes
+        const padded = hex.padStart(40, "0");
+        const ipId = (`0x${padded}`) as `0x${string}`;
+        return ipId.length === 42 ? ipId : null;
+      } catch {
+        return null;
+      }
+    }
+
     const parsed = rawLogs.map((l) => {
       const parsedLog = iface.parseLog({ topics: l.topics, data: l.data } as any);
+      const ipIdHex = toHexIpId(parsedLog?.args.ipId);
       return {
         blockNumber: String(l.blockNumber),
+        blockHash: (l as any).blockHash ? String((l as any).blockHash) : null,
         logIndex: String((l as any).logIndex ?? "0"),
         transactionIndex: String((l as any).transactionIndex ?? "0"),
         transactionHash: l.transactionHash,
         args: {
-          ipId: parsedLog?.args.ipId !== undefined && parsedLog?.args.ipId !== null ? String(parsedLog?.args.ipId) : null,
+          ipId: ipIdHex,
           owner: parsedLog?.args.owner ?? null,
           presetId: parsedLog?.args.presetId !== undefined && parsedLog?.args.presetId !== null ? Number(parsedLog?.args.presetId) : null,
           cidHash: parsedLog?.args.cidHash ?? null,

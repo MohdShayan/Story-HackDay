@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRemixHub } from "@/hooks/useRemixHub";
 import { keccak256, toUtf8Bytes } from "ethers";
 
@@ -11,33 +11,54 @@ export default function UploadDesignPage() {
     const [previewUrl, setPreviewUrl] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const [storyIpUrlState, setStoryIpUrlState] = useState<string | null>(null);
+    const [storyTxUrlState, setStoryTxUrlState] = useState<string | null>(null);
+    const [storyAddressUrlState, setStoryAddressUrlState] = useState<string | null>(null);
 
     const { registerOriginal, txHash, txReceipt, isPending } = useRemixHub();
 
+    // Log RemixHub tx lifecycle changes
+    useEffect(() => {
+        if (isPending) console.log("[UPLOAD] Stage 4: RemixHub tx pending...");
+    }, [isPending]);
+    useEffect(() => {
+        if (txHash) console.log("[UPLOAD] Stage 4: RemixHub txHash", txHash);
+    }, [txHash]);
+    useEffect(() => {
+        if (txReceipt?.data?.transactionHash) {
+            console.log("[UPLOAD] Stage 4: RemixHub confirmed", txReceipt.data.transactionHash);
+        }
+    }, [txReceipt]);
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        console.log("[UPLOAD] Submit clicked");
         setLoading(true);
         setMessage("Uploading to IPFS...");
 
         try {
             // --- 1. Upload to IPFS ---
+            console.log("[UPLOAD] Stage 1: Preparing IPFS form data");
             const formData = new FormData();
             formData.append("title", title);
             formData.append("figmaUrl", figmaUrl);
             if (file) formData.append("file", file);
             formData.append("previewUrl", previewUrl);
 
+            console.log("[UPLOAD] Stage 1: Sending IPFS upload request");
             const uploadRes = await fetch("/api/ipfs/upload", { method: "POST", body: formData });
             const uploadData = await uploadRes.json();
             if (!uploadRes.ok || !uploadData?.cid) {
+                console.error("[UPLOAD] Stage 1 ERROR: IPFS upload failed", uploadData);
                 throw new Error(uploadData?.error || "IPFS upload failed");
             }
             const cid = uploadData.cid as string;
-            console.log("Uploaded to IPFS:", cid);
+            console.log("[UPLOAD] Stage 1 SUCCESS: Uploaded to IPFS", { cid });
 
             setMessage("Registering with Story Protocol...");
 
             // --- 2. Register on Story ---
+            console.log("[UPLOAD] Stage 2: Registering on Story Protocol", { cid, title });
             const storyRes = await fetch("/api/story/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -46,31 +67,60 @@ export default function UploadDesignPage() {
 
             const storyData = await storyRes.json();
             if (!storyRes.ok || !storyData.success) {
+                console.error("[UPLOAD] Stage 2 ERROR: Story registration failed", storyData);
                 throw new Error(storyData?.error || "Story registration failed");
             }
 
             const ipId = storyData.ipId;
             if (!ipId) throw new Error("Missing ipId from Story");
+            console.log("[UPLOAD] Stage 2 SUCCESS: Story registered", { ipId, txHash: storyData.txHash });
+
+            // Show Story explorer & tx links persistently (clickable below)
+            const storyIpUrl = `https://aeneid.storyscan.io/ip-id/${ipId}`;
+            const storyAddressUrl = `https://aeneid.storyscan.io/address/${ipId}`;
+            const storyTxUrl = storyData.txHash ? `https://aeneid.storyscan.io/tx/${storyData.txHash}` : null;
+            setStoryIpUrlState(storyIpUrl);
+            setStoryTxUrlState(storyTxUrl);
+            setStoryAddressUrlState(storyAddressUrl);
+            try {
+                localStorage.setItem(
+                    `proof:${cid}`,
+                    JSON.stringify({ ipId, storyIpUrl, storyTxHash: storyData.txHash || null })
+                );
+                console.log("[UPLOAD] Stage 2: Persisted proof to localStorage", { key: `proof:${cid}` });
+            } catch (e) {
+                console.warn("[UPLOAD] Stage 2: Could not persist proof to localStorage", e);
+            }
+            setMessage(`Registered on Story. Anchoring in RemixHub contract...`);
 
             // --- 3. Compute cidHash locally (RemixHub format) ---
+            console.log("[UPLOAD] Stage 3: Computing cidHash");
             const cidHash = keccak256(toUtf8Bytes(cid)) as `0x${string}`;
-            console.log("CID Hash:", cidHash);
+            console.log("[UPLOAD] Stage 3 SUCCESS: cidHash computed", { cidHash });
 
             // Persist CID → Hash mapping
-            localStorage.setItem(cidHash, cid);
+            try {
+                localStorage.setItem(cidHash, cid);
+                console.log("[UPLOAD] Stage 3: Persisted cidHash→cid mapping to localStorage");
+            } catch (e) {
+                console.warn("[UPLOAD] Stage 3: Could not persist cidHash mapping", e);
+            }
 
-            setMessage("Anchoring in RemixHub contract...");
+            // keep message as above with story link while anchoring
 
             // --- 4. Register in RemixHub ---
             const ipIdBigInt = BigInt(ipId);
             const presetId = 1;
-            await registerOriginal(ipIdBigInt, cidHash, presetId); // AWAIT!
+            console.log("[UPLOAD] Stage 4: Anchoring in RemixHub", { ipId: ipIdBigInt.toString(), cidHash, presetId });
+            await registerOriginal(ipIdBigInt, cidHash, presetId);
+            console.log("[UPLOAD] Stage 4 SUCCESS: RemixHub anchoring tx dispatched");
 
-            setMessage("All done! Transaction submitted.");
+            setMessage("All done! See on-chain proof and transaction details below.");
         } catch (err: any) {
-            console.error("Upload flow error:", err);
-            setMessage("Error: " + err.message);
+            console.error("[UPLOAD] FATAL ERROR: Flow failed", err);
+            setMessage("Error: " + (err?.message || String(err)));
         } finally {
+            console.log("[UPLOAD] Flow finished (success or error)");
             setLoading(false);
         }
     }
@@ -145,16 +195,42 @@ export default function UploadDesignPage() {
                             {message}
                         </div>
                     )}
+
+                    <div className="rounded-md border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-800 space-y-2">
+                        <div className="font-medium">On-chain Proof (Story Protocol)</div>
+                        <div>
+                            IP Asset: {storyIpUrlState ? (
+                                <a className="text-indigo-600 underline" href={storyIpUrlState} target="_blank" rel="noreferrer noopener">{storyIpUrlState}</a>
+                            ) : (
+                                <span className="text-gray-500">—</span>
+                            )}
+                        </div>
+                        <div>
+                            Asset Address: {storyAddressUrlState ? (
+                                <a className="text-indigo-600 underline" href={storyAddressUrlState} target="_blank" rel="noreferrer noopener">{storyAddressUrlState}</a>
+                            ) : (
+                                <span className="text-gray-500">—</span>
+                            )}
+                        </div>
+                        <div className="text-[11px] text-gray-500">Explorer may take ~30–60s to index new IPs. If the IP Asset link 404s, use the Asset Address link and retry later.</div>
+                        <div>
+                            Story Registration Tx: {storyTxUrlState ? (
+                                <a className="text-indigo-600 underline" href={storyTxUrlState} target="_blank" rel="noreferrer noopener">{storyTxUrlState}</a>
+                            ) : (
+                                <span className="text-gray-500">—</span>
+                            )}
+                        </div>
+                    </div>
                     {(txHash || txReceipt?.data?.transactionHash) && (
                         <div className="grid gap-3 md:grid-cols-2 text-xs">
-                            {txHash && (
+                            {txHash && !txReceipt?.data?.transactionHash && (
                                 <div className="rounded border border-gray-200 bg-white/80 p-3 font-mono text-gray-700 truncate" title={txHash}>
-                                    Pending Tx: {txHash}
+                                    RemixHub Anchor Tx (Pending): <a className="text-indigo-600 underline" href={`https://aeneid.storyscan.io/tx/${txHash}`} target="_blank" rel="noreferrer noopener">{txHash}</a>
                                 </div>
                             )}
                             {txReceipt?.data?.transactionHash && (
                                 <div className="rounded border border-green-200 bg-green-50 p-3 font-mono text-green-700 truncate" title={txReceipt.data.transactionHash}>
-                                    Confirmed: {txReceipt.data.transactionHash}
+                                    RemixHub Anchor Tx (Confirmed): <a className="text-green-700 underline" href={`https://aeneid.storyscan.io/tx/${txReceipt.data.transactionHash}`} target="_blank" rel="noreferrer noopener">{txReceipt.data.transactionHash}</a>
                                 </div>
                             )}
                         </div>

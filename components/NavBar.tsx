@@ -106,11 +106,18 @@ export default function NavBar() {
   }, []);
 
   return (
-    <nav className="fixed backdrop-blur-2xl top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-black/10">
-      <div className="flex items-center gap-2">
+    <nav className="fixed backdrop-blur-2xl top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-black/10 bg-white/70">
+      <div className="flex items-center gap-8">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-4xl font-sans font-bold text-black">FigMint</span>
+          <span className="text-2xl sm:text-3xl font-sans font-bold text-black">FigMint</span>
         </Link>
+        {/* Primary nav links */}
+        <div className="hidden md:flex items-center gap-4 text-sm">
+          <Link href="/explore" className="text-gray-800 hover:text-black">Explore</Link>
+          <Link href="/upload" className="text-gray-800 hover:text-black">Upload</Link>
+          <Link href="/ip-assets/mine" className="text-gray-800 hover:text-black">My IPs</Link>
+          {/* <Link href="/ip-assets/all" className="text-gray-800 hover:text-black">All IPs</Link> */}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -123,7 +130,7 @@ export default function NavBar() {
               onClick={() => setMenuOpen((s) => !s)}
               className="flex items-center gap-3 rounded-full px-3 py-1 bg-white/70 border border-black/10"
             >
-              <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gradient-to-br from-indigo-500 to-blue-500">
+              <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-white bg-linear-to-br from-indigo-500 to-blue-500">
                 {shortAddr ? shortAddr.slice(2, 4).toUpperCase() : "U"}
               </div>
 
@@ -148,7 +155,7 @@ export default function NavBar() {
                 <div className="flex gap-2 mb-3">
                   <button
                     onClick={handleLogout}
-                    className="flex-1 text-sm bg-blue-600 text-white py-2 rounded-lg hover:bg-red-700 transition"
+                    className="flex-1 text-sm bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
                   >
                     Logout
                   </button>
